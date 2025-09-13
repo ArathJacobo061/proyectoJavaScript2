@@ -1,0 +1,1 @@
+este es un texto desde un archivo de texto mediante fetch

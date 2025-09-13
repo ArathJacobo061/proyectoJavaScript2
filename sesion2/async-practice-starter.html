@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Prácticas de Asincronía JS — Starter</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;max-width:900px;margin:40px auto;padding:0 16px}
+    h1{margin-bottom:0}
+    .muted{color:#666}
+    .card{border:1px solid #ddd;padding:16px;border-radius:12px;margin:12px 0}
+    button{padding:8px 12px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer}
+    button:hover{border-color:#666}
+    pre{background:#0f172a;color:#e5e7eb;padding:12px;border-radius:8px;overflow:auto}
+    .ok{color:#10b981;font-weight:600}
+    .fail{color:#ef4444;font-weight:600}
+  </style>
+</head>
+<body>
+  <h1>Prácticas de Asincronía en JS</h1>
+  <p class="muted">Abre la consola (F12) para ver más detalles. Edita <code>async-drills.js</code> y vuelve a cargar la página.</p>
+
+  <div class="card">
+    <h3>Ejercicio 1 — <code>delay(ms)</code></h3>
+    <p>Crea una promesa que se resuelva tras <code>ms</code> milisegundos.</p>
+    <button onclick="Tests.test1()">Probar</button>
+    <div id="out1"></div>
+  </div>
+
+  <div class="card">
+    <h3>Ejercicio 2 — <code>flash(el, times, ms)</code></h3>
+    <p>Alterna la clase <code>on</code> en el elemento indicado <em>times</em> veces, esperando <em>ms</em> entre cambios.</p>
+    <button onclick="Tests.test2()">Probar</button>
+    <div id="out2"></div>
+    <div id="flashBox" style="margin-top:8px;padding:12px;border:1px dashed #aaa;border-radius:8px;display:inline-block">Caja</div>
+    <style>#flashBox.on{background:#ffe08a}</style>
+  </div>
+
+  <div class="card">
+    <h3>Ejercicio 3 — <code>runFlagLoop(flag, ms)</code></h3>
+    <p>Mientras <code>flag.value</code> sea <code>true</code>, espera <code>ms</code> y suma 1 al contador. Detén con el botón.</p>
+    <button id="start3" onclick="Tests.test3start()">Iniciar</button>
+    <button id="stop3" onclick="Tests.test3stop()">Detener</button>
+    <div id="out3"></div>
+  </div>
+
+  <div class="card">
+    <h3>Ejercicio 4 — <code>getJSON(url)</code></h3>
+    <p>Usa <code>fetch</code>, valida <code>res.ok</code> y devuelve el JSON. Si falla, lanza <code>Error</code>.</p>
+    <button onclick="Tests.test4()">Probar</button>
+    <div id="out4"></div>
+  </div>
+
+  <div class="card">
+    <h3>Ejercicio 5 — <code>timeoutFetch(url, ms)</code></h3>
+    <p>Usa <code>AbortController</code> para abortar la petición si supera <em>ms</em>.</p>
+    <button onclick="Tests.test5()">Probar</button>
+    <div id="out5"></div>
+  </div>
+
+  <div class="card">
+    <h3>Ejercicio 6 — <code>parallelJSON(urls)</code></h3>
+    <p>Descarga varias URLs en paralelo con <code>Promise.all</code> y devuelve un arreglo de JSONs.</p>
+    <button onclick="Tests.test6()">Probar</button>
+    <div id="out6"></div>
+  </div>
+
+  <script type="module" src="async-drills.js"></script>
+  <script>
+  // Pequeño marco de tests (no modifiques)
+  const $ = s => document.querySelector(s);
+  const write = (id, ok, msg) => $(id).innerHTML = ok ? '<span class="ok">✔ ' + msg + '</span>' : '<span class="fail">✘ ' + msg + '</span>';
+  const Tests = {
+    async test1(){
+      write('#out1', false, 'Corriendo... mira la consola');
+      const t = performance.now();
+      await delay(250);
+      const dt = Math.round(performance.now() - t);
+      const ok = (dt >= 250 && dt <= 360);
+      console.log('delay(250) tardó', dt, 'ms');
+      write('#out1', ok, ok ? 'delay funciona (' + dt + ' ms)' : 'delay falló (' + dt + ' ms)');
+    },
+    async test2(){
+      write('#out2', false, 'Probando...');
+      const box = $('#flashBox');
+      box.classList.remove('on');
+      await flash(box, 4, 120);
+      const ok = !box.classList.contains('on');
+      write('#out2', ok, ok ? 'flash alternó clase correctamente' : 'flash no terminó en estado apagado');
+    },
+    flag: { value:false, count:0 },
+    async test3start(){
+      const st = $('#start3'), sp = $('#stop3');
+      this.flag.value = true;
+      this.flag.count = 0;
+      st.disabled = true; sp.disabled = false;
+      const prom = runFlagLoop(this.flag, 100);
+      setTimeout(()=>{ if (this.flag.count >= 3) write('#out3', true, 'Contó ' + this.flag.count + ' (ok)'); }, 350);
+      await prom;
+      st.disabled = false; sp.disabled = true;
+    },
+    test3stop(){
+      this.flag.value = false;
+      write('#out3', true, 'Detenido en ' + this.flag.count);
+    },
+    async test4(){
+      write('#out4', false, 'Llamando API...');
+      try {
+        const data = await getJSON('https://jsonplaceholder.typicode.com/todos/1');
+        write('#out4', data && data.id === 1, 'Recibido id=1');
+      } catch (e) {
+        write('#out4', false, 'Error: ' + e.message);
+      }
+    },
+    async test5(){
+      write('#out5', false, 'Simulando timeout 10ms...');
+      try {
+        await timeoutFetch('https://jsonplaceholder.typicode.com/todos/1', 10);
+        write('#out5', false, 'Debió abortar, pero no abortó');
+      } catch (e) {
+        write('#out5', e.name === 'AbortError' || /abort/i.test(e.message), 'Abortó correctamente');
+      }
+    },
+    async test6(){
+      write('#out6', false, 'Descargando en paralelo...');
+      try {
+        const arr = await parallelJSON([
+          'https://jsonplaceholder.typicode.com/todos/1',
+          'https://jsonplaceholder.typicode.com/todos/2',
+          'https://jsonplaceholder.typicode.com/todos/3'
+        ]);
+        const ok = Array.isArray(arr) && arr.length === 3 && arr[0].id === 1 && arr[2].id === 3;
+        write('#out6', ok, ok ? 'Paralelo OK (3 resultados)': 'Algo falló en los resultados');
+      } catch (e) {
+        write('#out6', false, 'Error: ' + e.message);
+      }
+    }
+  };
+  </script>
+</body>
+</html>

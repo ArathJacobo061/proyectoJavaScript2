@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sesión 5</title>
+</head>
+<body>
+  <h1>Ejemplo de AJAX</h1>
+
+  <div id="mensaje">
+    <h3>Ejemplo AJAX con Fetch</h3>
+    <button type="button" onclick="cargarContenido()">Cargar mensaje</button>
+    <p id="resultado" aria-live="polite"></p>
+  </div>
+
+  <script>
+    function cargarContenido() {
+      const salida = document.getElementById('resultado'); // <- ahora sí existe
+      salida.textContent = 'Cargando…';
+
+      fetch('fetch.txt')
+        .then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        })
+        .then(texto => {
+          // no borramos el h3 ni el botón, solo escribimos en <p id="resultado">
+          salida.textContent = texto;
+        })
+        .catch(err => {
+          salida.textContent = 'Ocurrió un error: ' + err.message;
+        });
+    }
+  </script>
+</body>
+</html>

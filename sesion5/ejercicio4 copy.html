@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicio 4</title>
+    <style>
+        table{
+            border-collapse: collapse;
+            margin-top:  15px;
+
+        }
+        th, td{
+            padding: 6px 12px;
+            border: 1px solid #333;
+        }
+        
+        select {
+            width: 300px;
+            margin-left: 10px;
+
+        }
+
+        #filtros{
+            margin-bottom: 15px;
+        }
+        
+    </style>
+</head>
+
+<body>
+  <div id="filtro">
+    <label for="estados">Estado:</label>
+    <select id="estados"></select>
+    <br /><br />
+    <label for="municipios">Municipio:</label>
+    <select id="municipios"></select>
+  </div>
+
+  <div id="tablaDatos"></div>
+
+  <script>
+    let xmlData, estadosArr = [], municipiosArr = [];
+    let datosFiltrados = [];
+
+    function cargarXML() {
+  const xhttp = new XMLHttpRequest();
+  if (xhttp.overrideMimeType) xhttp.overrideMimeType("text/xml");
+
+  xhttp.onload = function () {
+    if (xhttp.status !== 200) {
+      console.error("No se pudo cargar Cpdescarga.xml. Status:", xhttp.status);
+      alert("404/Errores cargando Cpdescarga.xml. Revisa la ruta.");
+      return;
+    }
+    if (!xhttp.responseXML) {
+      console.error("Respuesta recibida pero no es XML. Revisa contenido/MIME.");
+      console.debug("Primeros 200 chars:", xhttp.responseText?.slice(0, 200));
+      alert("El archivo no se interpretó como XML. Verifica etiquetas y formato.");
+      return;
+    }
+    xmlData = xhttp.responseXML;
+    cargarEstados();
+  };
+
+  xhttp.onerror = function () {
+    alert("Error de red al cargar Cpdescarga.xml (ruta incorrecta o servidor apagado).");
+  };
+
+  // Ajusta la ruta según dónde pusiste el XML:
+  // xhttp.open("GET", "./Cpdescarga.xml", true);
+  // xhttp.open("GET", "./data/Cpdescarga.xml", true);
+  xhttp.open("GET", "/sesion5/Cpdescarga.xml", true);
+  xhttp.send();
+}
+
+
+    function cargarEstados() {
+      const registros = xmlData.getElementsByTagName("table");
+      let estadosSet = new Set();
+
+      for (let reg of registros) {
+        let estado = reg.getElementsByTagName("d_estado")[0].textContent.trim();
+        estadosSet.add(estado);
+      }
+
+      estadosArr = Array.from(estadosSet).sort((a, b) => a.localeCompare(b));
+      let selectEstados = document.getElementById("estados");
+      selectEstados.innerHTML =
+        `<option value="Todos">---------Todos---------</option>` +
+        estadosArr.map(est => `<option value="${est}">${est}</option>`).join("");
+      selectEstados.onchange = cargarMunicipios;
+      cargarMunicipios();
+    }
+
+    function cargarMunicipios() {
+      const registros = xmlData.getElementsByTagName("table");
+      let estadoSel = document.getElementById("estados").value;
+      let municipiosSet = new Set();
+
+      for (let reg of registros) {
+        let estado = reg.getElementsByTagName("d_estado")[0].textContent.trim();
+        if (estadoSel === "Todos" || estado === estadoSel) {
+          let municipio = reg.getElementsByTagName("d_mnpio")[0].textContent.trim();
+          municipiosSet.add(municipio);
+        }
+      }
+
+      municipiosArr = Array.from(municipiosSet).sort((a, b) => a.localeCompare(b));
+      let selectMunicipios = document.getElementById("municipios");
+      selectMunicipios.innerHTML =
+        `<option value="Todos">---------Todos---------</option>` +
+        municipiosArr.map(mun => `<option value="${mun}">${mun}</option>`).join("");
+      selectMunicipios.onchange = mostrarDatosTabla;
+      mostrarDatosTabla();
+    }
+
+    function mostrarDatosTabla() {
+      const registros = xmlData.getElementsByTagName("table");
+      let estadoSel = document.getElementById("estados").value;
+      let municipioSel = document.getElementById("municipios").value;
+
+      let datos = [];
+      for (let reg of registros) {
+        let estado = reg.getElementsByTagName("d_estado")[0].textContent.trim();
+        let municipio = reg.getElementsByTagName("d_mnpio")[0].textContent.trim();
+
+        if (
+          (estadoSel === "Todos" || estado === estadoSel) &&
+          (municipioSel === "Todos" || municipio === municipioSel)
+        ) {
+          datos.push({
+            codigo: reg.getElementsByTagName("d_codigo")[0].textContent,
+            municipio,
+            estado,
+            ciudad: reg.getElementsByTagName("d_ciudad")[0]?.textContent || '',
+            oficina: reg.getElementsByTagName("c_oficina")[0]?.textContent || ''
+          });
+        }
+      }
+      datosFiltrados = datos;
+      renderTabla("codigo", 1);
+    }
+
+    function renderTabla(columna = "codigo", sentido = 1) {
+      let datosMostrar = [...datosFiltrados];
+
+      datosMostrar.sort((a, b) => {
+        if (a[columna] < b[columna]) return -1 * sentido;
+        if (a[columna] > b[columna]) return 1 * sentido;
+        return 0;
+      });
+
+      let ths = `
+        <th onclick="ordenar('codigo')">Código Postal</th>
+        <th onclick="ordenar('municipio')">Municipio</th>
+        <th onclick="ordenar('estado')">Estado</th>
+        <th onclick="ordenar('ciudad')">Ciudad</th>
+        <th onclick="ordenar('oficina')">Clave de oficina</th>
+      `;
+
+      let filas = datosMostrar.map(d => `
+        <tr>
+          <td>${d.codigo}</td>
+          <td>${d.municipio}</td>
+          <td>${d.estado}</td>
+          <td>${d.ciudad}</td>
+          <td>${d.oficina}</td>
+        </tr>
+      `).join("");
+
+      document.getElementById("tablaDatos").innerHTML = `
+        <table>
+          <caption>Códigos postales</caption>
+          <thead><tr>${ths}</tr></thead>
+          <tbody>${filas || '<tr><td colspan="5">sin datos</td></tr>'}</tbody>
+        </table>
+      `;
+    }
+
+    let ultimaCol = "codigo", sentido = 1;
+    function ordenar(col) {
+      sentido = (ultimaCol === col) ? -sentido : 1;
+      ultimaCol = col;
+      renderTabla(col, sentido);
+    }
+
+    cargarXML();
+    window.ordenar = ordenar;
+  </script>
+</body>
+
+</html>

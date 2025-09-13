@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ejercicio 4 – Códigos postales</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    #filtro { margin-bottom: 14px; }
+    label { display: inline-block; width: 80px; }
+    select { width: 320px; padding: 4px; }
+    button { margin-left: 8px; padding: 6px 10px; cursor: pointer; }
+
+    table { border-collapse: collapse; margin-top: 12px; width: 100%; max-width: 980px; }
+    th, td { border: 1px solid #333; padding: 6px 10px; text-align: left; vertical-align: top; }
+    th { cursor: pointer; user-select: none; white-space: nowrap; }
+    caption { font-weight: 600; padding: 6px 0; }
+
+    .meta { margin-top: 6px; font-size: .9rem; }
+    .muted { color: #666; }
+  </style>
+</head>
+
+<body>
+  <div id="filtro">
+    <label for="estados">Estado:</label>
+    <select id="estados"></select>
+    <br><br>
+    <label for="municipios">Municipio:</label>
+    <select id="municipios"></select>
+    <button type="button" id="btnCSV">Exportar CSV</button>
+  </div>
+
+  <div id="tablaDatos"><em class="muted">Cargando datos…</em></div>
+
+  <script>
+    // ------------------ Estado global ------------------
+    let xmlData;
+    let datosFiltrados = [];
+    let ultimaCol = "codigo";  // columna por defecto a ordenar
+    let sentido = 1;           // 1 ascendente, -1 descendente
+
+    // Comparador “es-ES” ignorando acentos y mayúsculas
+    const cmp = (a, b) => String(a).localeCompare(String(b), "es", {
+      sensitivity: "base",
+      ignorePunctuation: true
+    });
+
+    // ------------------ Carga del XML ------------------
+    function cargarXML() {
+      const xhttp = new XMLHttpRequest();
+      if (xhttp.overrideMimeType) xhttp.overrideMimeType("text/xml");
+
+      // Loader visual
+      document.getElementById("tablaDatos").innerHTML = "<em class='muted'>Cargando datos…</em>";
+
+      xhttp.onload = function () {
+        if (xhttp.status !== 200) {
+          console.error("No se pudo cargar Cpdescarga.xml. Status:", xhttp.status);
+          alert("404/Errores cargando Cpdescarga.xml. Revisa la ruta.");
+          return;
+        }
+        if (!xhttp.responseXML) {
+          console.error("Respuesta recibida pero no es XML. Revisa contenido/MIME.");
+          alert("El archivo no se interpretó como XML. Verifica etiquetas y formato.");
+          return;
+        }
+        xmlData = xhttp.responseXML;
+        cargarEstados();
+      };
+
+      xhttp.onerror = function () {
+        alert("Error de red al cargar Cpdescarga.xml (ruta incorrecta o servidor apagado).");
+      };
+
+      // Ajusta la ruta si tu XML está en otra carpeta (p.ej. "./data/Cpdescarga.xml")
+      xhttp.open("GET", "./Cpdescarga.xml", true);
+      xhttp.send();
+    }
+
+    // ------------------ Llenado de selects ------------------
+    function cargarEstados() {
+      const registros = xmlData.getElementsByTagName("table");
+      const estadosSet = new Set();
+
+      for (let reg of registros) {
+        const estado = reg.getElementsByTagName("d_estado")[0]?.textContent?.trim();
+        if (estado) estadosSet.add(estado);
+      }
+
+      const estadosArr = Array.from(estadosSet).sort(cmp);
+      const selectEstados = document.getElementById("estados");
+      selectEstados.innerHTML =
+        `<option value="Todos">---------Todos---------</option>` +
+        estadosArr.map(est => `<option value="${est}">${est}</option>`).join("");
+
+      selectEstados.onchange = cargarMunicipios;
+      cargarMunicipios();
+    }
+
+    function cargarMunicipios() {
+      const registros = xmlData.getElementsByTagName("table");
+      const estadoSel = document.getElementById("estados").value;
+      const municipiosSet = new Set();
+
+      for (let reg of registros) {
+        const estado = reg.getElementsByTagName("d_estado")[0]?.textContent?.trim();
+        if (estadoSel === "Todos" || estado === estadoSel) {
+          const municipio = reg.getElementsByTagName("d_mnpio")[0]?.textContent?.trim();
+          if (municipio) municipiosSet.add(municipio);
+        }
+      }
+
+      const municipiosArr = Array.from(municipiosSet).sort(cmp);
+      const selectMunicipios = document.getElementById("municipios");
+      selectMunicipios.innerHTML =
+        `<option value="Todos">---------Todos---------</option>` +
+        municipiosArr.map(mun => `<option value="${mun}">${mun}</option>`).join("");
+
+      selectMunicipios.onchange = mostrarDatosTabla;
+      mostrarDatosTabla();
+    }
+
+    // ------------------ Construcción de tabla ------------------
+    function mostrarDatosTabla() {
+      const registros = xmlData.getElementsByTagName("table");
+      const estadoSel = document.getElementById("estados").value;
+      const municipioSel = document.getElementById("municipios").value;
+
+      const datos = [];
+      for (let reg of registros) {
+        const estado = reg.getElementsByTagName("d_estado")[0]?.textContent?.trim() || "";
+        const municipio = reg.getElementsByTagName("d_mnpio")[0]?.textContent?.trim() || "";
+
+        const coincideEstado = (estadoSel === "Todos" || estado === estadoSel);
+        const coincideMunicipio = (municipioSel === "Todos" || municipio === municipioSel);
+
+        if (coincideEstado && coincideMunicipio) {
+          datos.push({
+            codigo: reg.getElementsByTagName("d_codigo")[0]?.textContent?.trim() || "",
+            municipio,
+            estado,
+            ciudad: reg.getElementsByTagName("d_ciudad")[0]?.textContent?.trim() || "",
+            oficina: reg.getElementsByTagName("c_oficina")[0]?.textContent?.trim() || "",
+          });
+        }
+      }
+
+      datosFiltrados = datos;
+      renderTabla(ultimaCol, sentido);
+    }
+
+    function renderTabla(columna = "codigo", dir = 1) {
+      const datosMostrar = [...datosFiltrados];
+
+      // Orden estable con comparador “es”
+      datosMostrar.sort((a, b) => dir * cmp(a[columna] ?? "", b[columna] ?? ""));
+
+      // Flecha visual en encabezados
+      const arrow = (col) => (ultimaCol === col ? (sentido === 1 ? " ▲" : " ▼") : "");
+
+      const ths = `
+        <th onclick="ordenar('codigo')">Código Postal${arrow('codigo')}</th>
+        <th onclick="ordenar('municipio')">Municipio${arrow('municipio')}</th>
+        <th onclick="ordenar('estado')">Estado${arrow('estado')}</th>
+        <th onclick="ordenar('ciudad')">Ciudad${arrow('ciudad')}</th>
+        <th onclick="ordenar('oficina')">Clave de oficina${arrow('oficina')}</th>
+      `;
+
+      const filas = datosMostrar.map(d => `
+        <tr>
+          <td>${d.codigo}</td>
+          <td>${d.municipio}</td>
+          <td>${d.estado}</td>
+          <td>${d.ciudad}</td>
+          <td>${d.oficina}</td>
+        </tr>
+      `).join("");
+
+      const total = datosMostrar.length;
+
+      document.getElementById("tablaDatos").innerHTML = `
+        <table>
+          <caption>Códigos postales</caption>
+          <thead><tr>${ths}</tr></thead>
+          <tbody>${filas || '<tr><td colspan="5">sin datos</td></tr>'}</tbody>
+        </table>
+        <div class="meta">Mostrando <b>${total}</b> registro(s)</div>
+      `;
+    }
+
+    // Toggle de orden al hacer click en <th>
+    function ordenar(col) {
+      sentido = (ultimaCol === col) ? -sentido : 1;
+      ultimaCol = col;
+      renderTabla(col, sentido);
+    }
+    window.ordenar = ordenar; // Exponer para los onclick de los <th>
+
+    // ------------------ Exportación CSV ------------------
+    function toCSV(rows) {
+      const head = ["codigo", "municipio", "estado", "ciudad", "oficina"];
+      const escape = (v = "") => `"${String(v).replaceAll(`"`, `""`)}"`;
+      const lines = [head.join(",")].concat(
+        rows.map(r => head.map(k => escape(r[k])).join(","))
+      );
+      return lines.join("\n");
+    }
+
+    function descargarCSV(nombre, contenido) {
+      const blob = new Blob([contenido], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = nombre; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById("btnCSV").onclick = () => {
+      if (!datosFiltrados.length) { alert("No hay datos para exportar."); return; }
+      descargarCSV("codigos_postales.csv", toCSV(datosFiltrados));
+    };
+
+    // Arranque
+    cargarXML();
+  </script>
+</body>
+
+</html>

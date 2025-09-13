@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <table>
+    <d_estado>SINALOA</d_estado>
+    <d_mnpio>CULIACÁN</d_mnpio>
+    <d_codigo>80000</d_codigo>
+    <d_ciudad>CULIACÁN</d_ciudad>
+    <c_oficina>001</c_oficina>
+  </table>
+</root>

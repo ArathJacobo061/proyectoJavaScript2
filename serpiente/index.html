@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Snake</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrapper">
+    <h1>🐍 Snake</h1>
+
+    <section class="hud">
+      <div class="score">
+        <span>Puntos:</span> <strong id="score">0</strong>
+      </div>
+      <div class="best">
+        <span>Mejor:</span> <strong id="best">0</strong>
+      </div>
+      <div class="controls">
+        <button id="pauseBtn" aria-pressed="false">Pausar</button>
+        <button id="resetBtn">Reiniciar</button>
+        <label class="speed">
+          Velocidad
+          <input id="speed" type="range" min="5" max="20" value="10" />
+        </label>
+      </div>
+    </section>
+
+    <canvas id="game" width="480" height="480" aria-label="Juego Snake" role="img"></canvas>
+
+    <section class="touch-help">Desliza para mover en móvil</section>
+  </main>
+
+  <script src="script.js" defer></script>
+</body>
+</html>

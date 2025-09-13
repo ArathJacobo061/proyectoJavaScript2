@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Semáforo Asíncrono</title>
+ <link rel="stylesheet" href="styles.css">
+
+</head>
+<body>
+  <div class="box">
+    <div class="traffic">
+      <div class="light red"   id="red"></div>
+      <div class="light yellow" id="yellow"></div>
+      <div class="light green"  id="green"></div>
+    </div>
+
+    <div class="controls">
+      <button id="start">Iniciar</button>
+      <button id="stop">Detener</button>
+      <label>ms por color: <input id="ms" type="number" min="200" step="100" value="800"></label>
+    </div>
+
+    <div id="status" class="muted"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

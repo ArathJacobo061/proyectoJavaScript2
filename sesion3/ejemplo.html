@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tema 3 – ES6 esenciales: Symbol, Set, Map, Iterables, Generadores, Proxy</title>
+  <style>
+    :root{--bg:#0f172a;--panel:#111827;--ink:#e5e7eb;--muted:#9ca3af;--accent:#22d3ee;--ok:#34d399;--warn:#fbbf24;--err:#f87171}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    main{max-width:1100px;margin:24px auto;padding:0 16px}
+    h1{font-size:clamp(22px,2.4vw,32px);margin:0 0 8px}
+    p.lead{color:var(--muted);margin:0 0 16px}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 22px}
+    button{background:#1f2937;border:1px solid #374151;color:var(--ink);padding:8px 12px;border-radius:10px;cursor:pointer}
+    button:hover{border-color:var(--accent)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+    .card{background:var(--panel);border:1px solid #1f2937;border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+    .card header{padding:10px 12px;border-bottom:1px solid #1f2937;display:flex;justify-content:space-between;align-items:center}
+    .card h2{font-size:18px;margin:0}
+    .card .actions{display:flex;gap:8px}
+    .out{margin:0;padding:10px 12px;min-height:120px;white-space:pre-wrap;background:#0b1220;color:#d1d5db;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border-top:1px dashed #1f2937}
+    .hint{color:var(--muted);font-size:13px;padding:8px 12px}
+    .k{color:#93c5fd}
+    .v{color:#86efac}
+    .e{color:var(--err)}
+    .ok{color:var(--ok)}
+    .warn{color:var(--warn)}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Tema 3 – ES6 esenciales, en ejemplos prácticos</h1>
+    <p class="lead">Abre este archivo en tu navegador (mejor con Live Server). Presiona “▶ Ejecutar” en cada tarjeta o usa “Ejecutar todo”.
+      El resultado aparece en el panel oscuro de cada sección.</p>
+    <div class="toolbar">
+      <button onclick="runAll()">▶ Ejecutar todo</button>
+      <button onclick="clearAll()">🧹 Limpiar todo</button>
+    </div>
+
+    <div class="grid">
+      <!-- SYMBOL -->
+      <section class="card" id="card-symbol">
+        <header>
+          <h2>Symbol</h2>
+          <div class="actions">
+            <button onclick="demoSymbol()">▶ Ejecutar</button>
+            <button onclick="clearOut('out-symbol')">🧹</button>
+          </div>
+        </header>
+        <div class="hint">Llaves únicas para propiedades que no colisionan.</div>
+        <pre id="out-symbol" class="out"></pre>
+      </section>
+
+      <!-- SET -->
+      <section class="card" id="card-set">
+        <header>
+          <h2>Set</h2>
+          <div class="actions">
+            <button onclick="demoSet()">▶ Ejecutar</button>
+            <button onclick="clearOut('out-set')">🧹</button>
+          </div>
+        </header>
+        <div class="hint">Conjunto sin duplicados. Perfecto para limpiar listas.</div>
+        <pre id="out-set" class="out"></pre>
+      </section>
+
+      <!-- MAP -->
+      <section class="card" id="card-map">
+        <header>
+          <h2>Map</h2>
+          <div class="actions">
+            <button onclick="demoMap()">▶ Ejecutar</button>
+            <button onclick="clearOut('out-map')">🧹</button>
+          </div>
+        </header>
+        <div class="hint">Diccionario clave→valor con claves de cualquier tipo.</div>
+        <pre id="out-map" class="out"></pre>
+      </section>
+
+      <!-- ITERABLES -->
+      <section class="card" id="card-iter">
+        <header>
+          <h2>Iterables / Iteradores</h2>
+          <div class="actions">
+            <button onclick="demoIterable()">▶ Ejecutar</button>
+            <button onclick="clearOut('out-iter')">🧹</button>
+          </div>
+        </header>
+        <div class="hint">Haz que tu objeto funcione con <code>for...of</code>.</div>
+        <pre id="out-iter" class="out"></pre>
+      </section>
+
+      <!-- GENERADORES -->
+      <section class="card" id="card-gen">
+        <header>
+          <h2>Generadores</h2>
+          <div class="actions">
+            <button onclick="demoGenerator()">▶ Ejecutar</button>
+            <button onclick="clearOut('out-gen')">🧹</button>
+          </div>
+        </header>
+        <div class="hint"><code>function*</code> + <code>yield</code> para secuencias bajo demanda.</div>
+        <pre id="out-gen" class="out"></pre>
+      </section>
+
+      <!-- PROXY -->
+      <section class="card" id="card-proxy">
+        <header>
+          <h2>Proxy</h2>
+          <div class="actions">
+            <button onclick="demoProxy()">▶ Ejecutar</button>
+            <button onclick="clearOut('out-proxy')">🧹</button>
+          </div>
+        </header>
+        <div class="hint">Intercepta lecturas/escrituras para validar o registrar.</div>
+        <pre id="out-proxy" class="out"></pre>
+      </section>
+
+      <!-- PROPIEDADES COMPUTADAS -->
+      <section class="card" id="card-comp">
+        <header>
+          <h2>Propiedades computadas</h2>
+          <div class="actions">
+            <button onclick="demoComputed()">▶ Ejecutar</button>
+            <button onclick="clearOut('out-comp')">🧹</button>
+          </div>
+        </header>
+        <div class="hint">Nombres de propiedad creados con expresiones.</div>
+        <pre id="out-comp" class="out"></pre>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // Utilidades de logging
+    function log(id, ...msgs){
+      const pre = document.getElementById(id);
+      const line = msgs.map(x => typeof x === 'string' ? x : JSON.stringify(x,null,2)).join(' ');
+      pre.textContent += (pre.textContent ? '\n' : '') + line;
+    }
+    function clearOut(id){
+      const pre = document.getElementById(id);
+      pre.textContent = '';
+    }
+    function clearAll(){
+      ['out-symbol','out-set','out-map','out-iter','out-gen','out-proxy','out-comp'].forEach(clearOut);
+    }
+
+    // 1) SYMBOL
+    function demoSymbol(){
+      clearOut('out-symbol');
+      const a = Symbol('id');
+      const b = Symbol('id');
+      log('out-symbol', '¿a === b?', a === b); // false
+
+      const oculto = Symbol('secreto');
+      const user = { nombre:'Ana', [oculto]:'token-xyz' };
+      log('out-symbol', 'Object.keys(user):', Object.keys(user)); // no incluye el symbol
+      log('out-symbol', 'Acceso por symbol:', user[oculto]);
+
+      const g1 = Symbol.for('global');
+      const g2 = Symbol.for('global');
+      log('out-symbol', 'Symbol.for reutiliza:', g1 === g2); // true
+    }
+
+    // 2) SET
+    function demoSet(){
+      clearOut('out-set');
+      const lista = ['react','node','teams','steam','Teams','react','stream'];
+      const set = new Set(lista.map(s => s.toLowerCase())); // normaliza y quita duplicados
+      log('out-set','Original:', lista);
+      log('out-set','Sin duplicados:', [...set]);
+      log('out-set','size =', set.size);
+      log('out-set','¿incluye "node"?', set.has('node'));
+    }
+
+    // 3) MAP
+    function demoMap(){
+      clearOut('out-map');
+      const m = new Map();
+      const claveObj = { id: 1 };
+      m.set('uno', 1);
+      m.set(claveObj, 'soy un valor con clave objeto');
+      log('out-map','get("uno") =', m.get('uno'));
+      log('out-map','get({id:1}) =', m.get(claveObj));
+      log('out-map','size =', m.size);
+      // recorrer
+      for (const [k,v] of m) log('out-map', `par:`, {k, v});
+    }
+
+    // 4) ITERABLES / ITERADORES
+    function demoIterable(){
+      clearOut('out-iter');
+      const rango = {
+        from: 3,
+        to: 7,
+        [Symbol.iterator](){
+          let cur = this.from, last = this.to;
+          return {
+            next(){
+              return (cur <= last)
+                ? { value: cur++, done: false }
+                : { done: true };
+            }
+          }
+        }
+      };
+      log('out-iter','for...of rango (3..7):');
+      for (const n of rango) log('out-iter','→', n);
+
+      const it = rango[Symbol.iterator]();
+      log('out-iter','Manual next():');
+      log('out-iter', it.next());
+      log('out-iter', it.next());
+    }
+
+    // 5) GENERADORES
+    function* paresHasta(n){
+      for(let i=0;i<=n;i+=2) yield i;
+    }
+    function demoGenerator(){
+      clearOut('out-gen');
+      log('out-gen','paresHasta(8) con spread:', [...paresHasta(8)]);
+      const g = paresHasta(4);
+      log('out-gen','next():', g.next());
+      log('out-gen','next():', g.next());
+      log('out-gen','next():', g.next());
+    }
+
+    // 6) PROXY
+    function demoProxy(){
+      clearOut('out-proxy');
+      const original = {};
+      const p = new Proxy(original, {
+        set(obj, prop, val){
+          if (typeof val !== 'number') throw new TypeError('Solo números permitidos');
+          obj[prop] = val; return true;
+        }
+      });
+      p.edad = 30; // OK
+      log('out-proxy','p.edad =', p.edad);
+      try { p.edad = 'treinta'; } catch(e){ log('out-proxy','Error →', e.message); }
+      log('out-proxy','original:', original);
+      // Proxy revocable (opcional)
+      const {proxy, revoke} = Proxy.revocable({x:1}, {});
+      log('out-proxy','revocable.x =', proxy.x);
+      revoke();
+      try { log('out-proxy','tras revoke:', proxy.x); } catch(e){ log('out-proxy','revocado →', e.message); }
+    }
+
+    // 7) PROPIEDADES COMPUTADAS
+    function demoComputed(){
+      clearOut('out-comp');
+      const campo = 'sku';
+      const idx = n => 'p' + n;
+      const obj = {
+        [campo]: 'ABC-123',
+        [idx(2)]: 456,
+        nombre: 'Ana'
+      };
+      log('out-comp', obj);
+      log('out-comp','obj["sku"] =', obj['sku']);
+      log('out-comp','obj.p2 =', obj.p2);
+    }
+
+    // Ejecutar/Limpiar todos
+    function runAll(){
+      demoSymbol();
+      demoSet();
+      demoMap();
+      demoIterable();
+      demoGenerator();
+      demoProxy();
+      demoComputed();
+    }
+  </script>
+</body>
+</html>
